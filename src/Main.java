@@ -2,19 +2,16 @@
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 /*
 
-    1. Get the current Thread of Main
-    2. print it's class name
-    3. Print all the state of this thread: Id, name, priority, state, threadGroup, isAlive
-    4. What does sout(currThread) prints? - Check the Thread class toString()
-    5. Create a new Child Thread which prints something at 1s interval
+    === 4. Interacting and Manipulating a running thread   ===
+    1. Make the main thread print something after 1 sec - print before and after completion of this thread
+    2. Make a child thread to print 10 dots each after .5s - print before and after completion of this thread
+    3. Start both the threads while updating the user for each action
 
-    6. Run the child thread
-    7. How we would get to know which thread(parent or child) is running what
-        Add some sout to main thread and child Th that will tell us which thread is executed when
-        Diff bw start() and run()
-    8. Create a Thread using Runnable Interface
-    9. Till now, how many thread V have created till now, and how to distinguish each thread from other
-        WHat are the different ways to creating a Thread and which is better
+    4. Interrupt the child thread from the main thread after sleeping the main thread for 2s
+
+    5. In the second scenario of interrupting the child thread - stop the child thread if it exceeds 2s
+        Print the state of the child TD in the try(running) and catch(interrupted state) of the exception
+        While the child TD is running(4s), make sure to check the state of the Child TD from the main TH
 
 */
 
@@ -23,48 +20,68 @@ import java.util.concurrent.TimeUnit;
 public class Main {
     public static void main(String[] args) {
 
-        Thread currThread = Thread.currentThread();
-//        System.out.println(currThread.getClass().getName());
+        System.out.println("Inside the main thread");
 
-        // printThreadState(currThread);
-//        System.out.println(currThread);
+        Thread mainThread = Thread.currentThread();
+        System.out.println(mainThread.getName() + " thread is sleeping for 1s");
+        try
+        {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException ex)
+        {
+            ex.printStackTrace();
+        }
 
-        // Child Th2
-        CustomThread customThread = new CustomThread();
-        customThread.start();
-
-        // Child Th3 - using Runnable Interface
-        Runnable childThread2 = () -> {
-            for (int i = 0; i < 15; i++)
+        Runnable childThreadRunnable = () -> {
+            String threadName = Thread.currentThread().getName();
+            System.out.println(threadName + " will take 10 dots to run");
+            for (int i = 0; i < 10; i++)
             {
-                System.out.print(" c2 ");
-
-                try
-                {
-                    TimeUnit.SECONDS.sleep(2);
-                }
-                catch (InterruptedException ex)
-                {
-                    ex.printStackTrace();
+                System.out.print(" . ");
+                try {
+                    Thread.sleep(500);
+                    System.out.println("A. State = " + Thread.currentThread().getState());
+                } catch (Exception ex) {
+                    System.out.println("Oops, child Thread interrupted!");
+                    System.out.println("A1. State = " + Thread.currentThread().getState());
+                    return;
                 }
             }
+            System.out.println("\n" + threadName + " completed!");
         };
 
-        Thread myThread = new Thread(childThread2);
-        myThread.start();
+        Thread childThread = new Thread(childThreadRunnable);
+        System.out.println("Starting: " + childThread.getName());
+        childThread.start();
 
+        System.out.println("Main thread would continue here");
 
-        for (int i = 0; i < 5; i++) {
-            System.out.print("P ");
-            try
-            {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException ex)
-            {
+        // interrupting the child Thread after 2s sleep of main Thread
+//        try {
+//            Thread.sleep(2000);
+//        } catch (InterruptedException ex) {
+//            ex.printStackTrace();
+//        }
+//        childThread.interrupt();
+
+        // stopping the child TH after 2 sec
+        long now = System.currentTimeMillis();
+        while (childThread.isAlive())
+        {
+            System.out.println("\n Waiting for child thread to complete");
+            try {
+                Thread.sleep(1000);
+                System.out.println("B. State = " + childThread.getState());
+
+                if (System.currentTimeMillis() - now > 2000)
+                    childThread.interrupt();
+            } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         }
 
+        System.out.println("C. State = " + childThread.getState());
 
     }
 
